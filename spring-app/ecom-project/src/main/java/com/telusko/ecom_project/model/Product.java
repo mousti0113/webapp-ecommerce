@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import jakarta.persistence.Lob;
 
 @Entity
 @Data
@@ -30,7 +31,10 @@ public class Product {
     private Date releaseDate;
     private boolean available;
     private int quantity;
-
+    private String imageName;
+    private String imageType;
+    @Lob
+    private byte[] imageData;
 
 }
 
