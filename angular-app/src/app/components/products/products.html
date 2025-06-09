@@ -1,0 +1,191 @@
+<div class="products-container">
+  
+  <!-- Header Section -->
+  <div class="products-header">
+    <div class="container">
+      <!-- Title and Results Count -->
+      <div class="header-info">
+        <h1 class="page-title">Products</h1>
+        <p class="results-count">
+          @if (selectedCategory) {
+            {{ selectedCategory }} - {{ totalProducts }} products found
+          } @else {
+            {{ totalProducts }} products available
+          }
+        </p>
+      </div>
+
+      <!-- Search and Controls -->
+      <div class="search-controls">
+        <!-- Search Field -->
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Search products</mat-label>
+          <input matInput 
+                 [formControl]="searchControl"
+                 placeholder="Search by name, brand, category...">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <!-- Sort Dropdown -->
+        <mat-form-field appearance="outline" class="sort-field">
+          <mat-label>Sort by</mat-label>
+          <mat-select [(value)]="selectedSortBy" (selectionChange)="onSortChange()">
+            @for (option of sortOptions; track option.value) {
+              <mat-option [value]="option.value">{{ option.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- Active Filters -->
+      @if (selectedCategory || searchControl.value) {
+        <div class="active-filters">
+          <span class="filters-label">Active filters:</span>
+          
+          @if (selectedCategory) {
+            <mat-chip-option 
+              selected 
+              (removed)="onCategoryChange('')"
+              class="filter-chip">
+              Category: {{ selectedCategory }}
+              <mat-icon matChipRemove>cancel</mat-icon>
+            </mat-chip-option>
+          }
+          
+          @if (searchControl.value) {
+            <mat-chip-option 
+              selected 
+              (removed)="searchControl.setValue(''); filterAndSortProducts()"
+              class="filter-chip">
+              Search: "{{ searchControl.value }}"
+              <mat-icon matChipRemove>cancel</mat-icon>
+            </mat-chip-option>
+          }
+          
+          <button mat-button (click)="clearFilters()" class="clear-filters-btn">
+            Clear All Filters
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="container">
+      <div class="content-wrapper">
+        
+        <!-- Sidebar Categories -->
+        <aside class="categories-sidebar">
+          <div class="sidebar-card">
+            <h3 class="sidebar-title">Categories</h3>
+            
+            <div class="category-list">
+              <button 
+                mat-button 
+                (click)="onCategoryChange('')"
+                [class.active]="!selectedCategory"
+                class="category-btn">
+                All Categories
+              </button>
+              
+              @for (category of categories; track category) {
+                <button 
+                  mat-button 
+                  (click)="onCategoryChange(category)"
+                  [class.active]="selectedCategory === category"
+                  class="category-btn">
+                  {{ category }}
+                </button>
+              }
+            </div>
+          </div>
+        </aside>
+
+        <!-- Products Grid -->
+        <main class="products-main">
+          @if (loading) {
+            <div class="loading-container">
+              <mat-spinner diameter="50"></mat-spinner>
+              <p>Loading products...</p>
+            </div>
+          } @else if (displayedProducts.length === 0) {
+            <div class="no-products">
+              <mat-icon class="no-products-icon">search_off</mat-icon>
+              <h3>No products found</h3>
+              <p>Try adjusting your search criteria or browse different categories</p>
+              <button mat-raised-button color="primary" (click)="clearFilters()">
+                Clear All Filters
+              </button>
+            </div>
+          } @else {
+            <!-- Products Grid -->
+            <div class="products-grid">
+              @for (product of displayedProducts; track product.id) {
+                <mat-card class="product-card" (click)="navigateToProduct(product.id)">
+                  
+                  <!-- Product Image -->
+                  <div class="product-image-container">
+                    <img 
+                      [src]="getProductImageUrl(product)" 
+                      [alt]="product.name"
+                      (error)="onImageError($event, product)"
+                      class="product-image"
+                      loading="lazy"
+                    >
+                    
+                    <!-- Stock Status Badge -->
+                    <div class="stock-badge" [ngClass]="getStockStatus(product).class">
+                      {{ getStockStatus(product).text }}
+                    </div>
+                  </div>
+                  
+                  <!-- Product Info -->
+                  <mat-card-content class="product-content">
+                    <div class="product-category">{{ product.category }}</div>
+                    <h3 class="product-name">{{ product.name }}</h3>
+                    <p class="product-brand">{{ product.brand }}</p>
+                    
+                    <div class="product-footer">
+                      <div class="price-section">
+                        <span class="current-price">{{ formatPrice(product.price) }}</span>
+                      </div>
+                      
+                      <button 
+                        mat-icon-button 
+                        color="primary"
+                        (click)="addToCart(product, $event)"
+                        [disabled]="!product.productAvailable"
+                        matTooltip="Add to Cart"
+                        class="add-to-cart-btn">
+                        <mat-icon>add_shopping_cart</mat-icon>
+                      </button>
+                    </div>
+                    
+                    @if (product.productAvailable && product.stockQuantity) {
+                      <div class="stock-info">{{ product.stockQuantity }} available</div>
+                    }
+                  </mat-card-content>
+                </mat-card>
+              }
+            </div>
+
+            <!-- Pagination -->
+            @if (totalProducts > pageSize) {
+              <div class="pagination-container">
+                <mat-paginator
+                  [length]="totalProducts"
+                  [pageSize]="pageSize"
+                  [pageSizeOptions]="[12, 24, 48]"
+                  [pageIndex]="pageIndex"
+                  (page)="onPageChange($event)"
+                  showFirstLastButtons>
+                </mat-paginator>
+              </div>
+            }
+          }
+        </main>
+      </div>
+    </div>
+  </div>
+</div>

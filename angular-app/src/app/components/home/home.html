@@ -1,1 +1,167 @@
-<p>home works!</p>
+<div class="home-container">
+  
+  <!-- Hero Section -->
+  <section class="hero-section bg-gradient-to-br from-blue-50 to-indigo-100 py-20 px-4">
+    <div class="max-w-6xl mx-auto flex items-center justify-between gap-12">
+      <div class="hero-content flex-1">
+        <h1 class="text-5xl font-bold text-gray-900 mb-6 leading-tight">
+          Welcome to <span class="text-blue-600">E-Shop</span>
+        </h1>
+        <p class="text-xl text-gray-600 mb-8 leading-relaxed">
+          Discover amazing products at unbeatable prices. Your one-stop shop for everything you need.
+        </p>
+        <div class="flex gap-4">
+          <button 
+            mat-raised-button 
+            color="primary" 
+            (click)="navigateToProducts()"
+            class="text-lg px-8 py-3">
+            <mat-icon class="mr-2">shopping_bag</mat-icon>
+            Shop Now
+          </button>
+          <button 
+            mat-stroked-button 
+            color="primary"
+            (click)="navigateToProducts()"
+            class="text-lg px-8 py-3">
+            Browse Categories
+          </button>
+        </div>
+      </div>
+      <div class="hero-image hidden lg:block flex-1">
+        <img 
+          src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop" 
+          alt="Shopping" 
+          class="w-full h-auto rounded-lg shadow-2xl">
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories Section -->
+  <section class="categories-section py-16 px-4 bg-gray-50">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl font-bold text-gray-900 mb-4">Shop by Category</h2>
+        <p class="text-lg text-gray-600">Find exactly what you're looking for</p>
+      </div>
+      
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+        @for (category of categories; track category.id) {
+          <div 
+            class="category-card bg-white rounded-xl p-6 text-center cursor-pointer hover:shadow-lg transition-all duration-300 transform hover:-translate-y-2"
+            (click)="navigateToProducts(category.name)">
+            <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center text-white" 
+                 [class]="category.color">
+              <mat-icon class="text-2xl">{{ category.icon }}</mat-icon>
+            </div>
+            <h3 class="font-semibold text-gray-900">{{ category.name }}</h3>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Products Section -->
+  <section class="featured-section py-16 px-4">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-12">
+        <h2 class="text-3xl font-bold text-gray-900 mb-4">Featured Products</h2>
+        <p class="text-lg text-gray-600">Handpicked items just for you</p>
+      </div>
+
+      @if (loading) {
+        <div class="flex justify-center py-12">
+          <mat-spinner></mat-spinner>
+        </div>
+      } @else {
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          @for (product of featuredProducts; track product.id) {
+            <mat-card class="product-card group cursor-pointer hover:shadow-xl transition-all duration-300">
+              <div class="relative overflow-hidden">
+                <img 
+                  [src]="getProductImageUrl(product)" 
+                  [alt]="product.name"
+                  class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                  (click)="navigateToProduct(product.id)"
+                 >
+                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                  <button 
+                    mat-mini-fab 
+                    color="primary"
+                    (click)="navigateToProduct(product.id)"
+                    class="opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    matTooltip="View Details">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                </div>
+              </div>
+              
+              <mat-card-content class="p-4">
+                <h3 class="font-semibold text-lg text-gray-900 mb-2 line-clamp-2">{{ product.name }}</h3>
+                <p class="text-sm text-gray-500 mb-2">{{ product.brand }}</p>
+                <p class="text-xs text-blue-600 mb-3">{{ product.category }}</p>
+                
+                <div class="flex items-center justify-between">
+                  <span class="text-2xl font-bold text-green-600">${{ product.price }}</span>
+                  <button 
+                    mat-icon-button 
+                    color="primary"
+                    (click)="addToCart(product); $event.stopPropagation()"
+                    matTooltip="Add to Cart"
+                    [disabled]="!product.productAvailable">
+                    <mat-icon>add_shopping_cart</mat-icon>
+                  </button>
+                </div>
+                
+                @if (!product.productAvailable) {
+                  <div class="mt-2 text-xs text-red-500">Out of Stock</div>
+                } @else {
+                  <div class="mt-2 text-xs text-green-500">{{ product.stockQuantity }} in stock</div>
+                }
+              </mat-card-content>
+            </mat-card>
+          }
+        </div>
+
+        <div class="text-center mt-12">
+          <button 
+            mat-raised-button 
+            color="primary"
+            (click)="navigateToProducts()"
+            class="text-lg px-8 py-3">
+            View All Products
+            <mat-icon class="ml-2">arrow_forward</mat-icon>
+          </button>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section py-16 px-4 bg-gray-900 text-white">
+    <div class="max-w-6xl mx-auto">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div class="text-center">
+          <mat-icon class="text-4xl text-blue-400 mb-4">local_shipping</mat-icon>
+          <h3 class="text-xl font-semibold mb-2">Free Shipping</h3>
+          <p class="text-gray-300">On orders over $100</p>
+        </div>
+        <div class="text-center">
+          <mat-icon class="text-4xl text-green-400 mb-4">security</mat-icon>
+          <h3 class="text-xl font-semibold mb-2">Secure Payment</h3>
+          <p class="text-gray-300">100% secure transactions</p>
+        </div>
+        <div class="text-center">
+          <mat-icon class="text-4xl text-yellow-400 mb-4">support_agent</mat-icon>
+          <h3 class="text-xl font-semibold mb-2">24/7 Support</h3>
+          <p class="text-gray-300">Round the clock assistance</p>
+        </div>
+        <div class="text-center">
+          <mat-icon class="text-4xl text-purple-400 mb-4">autorenew</mat-icon>
+          <h3 class="text-xl font-semibold mb-2">Easy Returns</h3>
+          <p class="text-gray-300">30-day return policy</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

@@ -1,15 +1,3 @@
-import { Component } from '@angular/core';
-
-@Component({
-  selector: 'app-add-product',
-  imports: [],
-  templateUrl: './add-product.html',
-  styleUrl: './add-product.scss'
-})
-export class AddProduct {
-
-}
-/*
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -27,7 +15,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatMenuModule } from '@angular/material/menu';
+import { MatBadgeModule } from '@angular/material/badge';
 
 // Services
 import { ProductService, Product } from '../../services/product';
@@ -50,7 +38,7 @@ import { CartService } from '../../services/cart-service';
     MatProgressSpinnerModule,
     MatSnackBarModule,
     MatPaginatorModule,
-    MatMenuModule
+    MatBadgeModule
   ],
   templateUrl: './products.html',
   styleUrl: './products.scss'
@@ -75,21 +63,23 @@ export class Products implements OnInit {
   // Categorie disponibili
   categories: string[] = [];
   
+  // Mappa per tracciare le immagini che hanno fallito
+  private failedImages = new Set<string>();
+  
   // Opzioni di ordinamento
   sortOptions = [
     { value: 'name', label: 'Name A-Z' },
     { value: 'name-desc', label: 'Name Z-A' },
     { value: 'price', label: 'Price Low to High' },
-    { value: 'price-desc', label: 'Price High to Low' },
-    { value: 'date', label: 'Newest First' },
-    { value: 'date-desc', label: 'Oldest First' }
+    { value: 'price-desc', label: 'Price High to Low' }
   ];
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private productService: ProductService,
-    private snackBar: MatSnackBar, private cartService: CartService
+    private snackBar: MatSnackBar,
+    private cartService: CartService
   ) {}
 
   ngOnInit(): void {
@@ -123,6 +113,7 @@ export class Products implements OnInit {
     this.loading = true;
     this.productService.getAllProducts().subscribe({
       next: (products) => {
+        console.log('Products loaded:', products);
         this.allProducts = products;
         this.extractCategories();
         this.filterAndSortProducts();
@@ -179,10 +170,6 @@ export class Products implements OnInit {
         return products.sort((a, b) => a.price - b.price);
       case 'price-desc':
         return products.sort((a, b) => b.price - a.price);
-      case 'date':
-        return products.sort((a, b) => new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime());
-      case 'date-desc':
-        return products.sort((a, b) => new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime());
       default:
         return products;
     }
@@ -232,26 +219,93 @@ export class Products implements OnInit {
     });
   }
 
+  // Metodo migliorato per gestire le immagini
   getProductImageUrl(product: Product): string {
-    if (product.id) {
-
-      return this.productService.getProductImage(product.id);
+    const imageKey = `product-${product.id}`;
+    
+    // Se l'immagine ha già fallito, restituisci direttamente il placeholder
+    if (this.failedImages.has(imageKey)) {
+      return this.getPlaceholderImage(product);
     }
-    console.warn('No product ID found, returning placeholder image');
-    return 'https://via.placeholder.com/300x300?text=No+Image';
+    
+    // Se il prodotto ha un ID, prova a caricare l'immagine dal backend
+    if (product.id) {
+      return `http://localhost:8080/api/product/${product.id}/image`;
+    }
+    
+    // Fallback per prodotti senza ID
+    return this.getPlaceholderImage(product);
+  }
+
+  // Metodo per ottenere immagine placeholder locale
+  private getPlaceholderImage(product: Product): string {
+    // Crea un'immagine placeholder basata sulla categoria del prodotto
+    const categoryColors: { [key: string]: string } = {
+      'Electronics': '#3f51b5',
+      'Clothing': '#e91e63',
+      'Books': '#ff9800',
+      'Home': '#4caf50',
+      'Sports': '#f44336',
+      'default': '#9e9e9e'
+    };
+    
+    const color = categoryColors[product.category] || categoryColors['default'];
+    const bgColor = color.replace('#', '');
+    
+    // Usa un servizio di placeholder che funziona sempre
+    return `https://dummyimage.com/300x300/${bgColor}/ffffff&text=${encodeURIComponent(product.name.substring(0, 20))}`;
+  }
+
+  // Gestisce errori di caricamento immagine (versione migliorata)
+  onImageError(event: any, product: Product): void {
+    const imageKey = `product-${product.id}`;
+    
+    // Evita loop infiniti
+    if (this.failedImages.has(imageKey)) {
+      return;
+    }
+    
+    // Marca l'immagine come fallita
+    this.failedImages.add(imageKey);
+    
+    console.warn('Image load error for product:', product.name);
+    
+    // Imposta immagine placeholder locale
+    event.target.src = this.getPlaceholderImage(product);
   }
 
   navigateToProduct(productId: number): void {
     this.router.navigate(['/products', productId]);
   }
 
- addToCart(product: Product): void {
-  this.cartService.addToCart(product, 1);
-  this.snackBar.open(`${product.name} added to cart!`, 'Close', { 
-    duration: 2000,
-    horizontalPosition: 'right',
-    verticalPosition: 'top'
-  });
+  addToCart(product: Product, event: Event): void {
+    event.stopPropagation(); // Evita di navigare al prodotto
+    this.cartService.addToCart(product, 1);
+    this.snackBar.open(`${product.name} added to cart!`, 'Close', { 
+      duration: 2000,
+      horizontalPosition: 'right',
+      verticalPosition: 'top'
+    });
+  }
+
+  // Formato prezzo
+  formatPrice(price: number): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(price);
+  }
+
+  // Stato dello stock
+  getStockStatus(product: Product): { text: string, class: string } {
+    if (!product.productAvailable) {
+      return { text: 'Out of Stock', class: 'out-of-stock' };
+    }
+    
+    if (product.stockQuantity <= 5) {
+      return { text: 'Low Stock', class: 'low-stock' };
+    }
+    
+    return { text: 'In Stock', class: 'in-stock' };
+  }
 }
-}
-*/

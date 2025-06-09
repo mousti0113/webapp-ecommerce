@@ -1,0 +1,33 @@
+// Override Material styles
+::ng-deep .mat-toolbar {
+  background: white !important;
+  color: inherit !important;
+}
+
+::ng-deep .mat-button {
+  line-height: inherit !important;
+}
+
+::ng-deep .mat-badge-content {
+  background: #f44336 !important;
+  color: white !important;
+}
+
+// Custom animation for mobile menu
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+// Remove text decoration from links
+.no-underline {
+  text-decoration: none !important;
+}

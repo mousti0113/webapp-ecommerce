@@ -1,0 +1,113 @@
+.admin-container {
+  min-height: calc(100vh - 64px);
+}
+
+.stat-card {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+}
+
+.table-card {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.form-card {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.table-container {
+  overflow-x: auto;
+  
+  table {
+    min-width: 800px;
+  }
+}
+
+.category-chip {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.image-upload-section {
+  border: 2px dashed #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  transition: border-color 0.3s ease;
+  
+  &:hover {
+    border-color: #1976d2;
+  }
+}
+
+// Override Material styles
+::ng-deep {
+  .admin-tabs {
+    .mat-mdc-tab-group {
+      background: transparent;
+    }
+    
+    .mat-mdc-tab-body-content {
+      overflow: visible;
+    }
+  }
+  
+  .mat-mdc-card {
+    border-radius: 12px;
+  }
+  
+  .mat-mdc-form-field {
+    .mat-mdc-text-field-wrapper {
+      background-color: white;
+    }
+  }
+  
+  .mat-mdc-raised-button {
+    border-radius: 8px;
+    font-weight: 600;
+  }
+  
+  .mat-mdc-table {
+    .mat-mdc-row:hover {
+      background-color: #f5f5f5;
+    }
+  }
+  
+  .mat-mdc-chip-option {
+    background-color: #e3f2fd;
+    color: #1976d2;
+  }
+  
+  .mat-paginator {
+    background: white;
+    border-radius: 0 0 12px 12px;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .admin-container {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .table-container {
+      font-size: 14px;
+    }
+  }
+}

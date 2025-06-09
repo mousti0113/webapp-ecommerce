@@ -1,1 +1,182 @@
-<p>add-product works!</p>
+<!--
+<div class="products-container min-h-screen bg-gray-50">
+  
+  <div class="bg-white border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 py-6">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Products</h1>
+          <p class="text-gray-600 mt-1">
+            @if (selectedCategory) {
+              {{ selectedCategory }} ({{ totalProducts }} items)
+            } @else {
+              All Products ({{ totalProducts }} items)
+            }
+          </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4 min-w-0 lg:min-w-96">
+          
+<mat-form-field appearance="fill" class="flex-1">
+  <mat-label>Search products...</mat-label>
+  <input matInput 
+         [formControl]="searchControl"
+         placeholder="Search by name, brand, description...">
+  <mat-icon matSuffix>search</mat-icon>
+</mat-form-field>
+
+<mat-form-field appearance="fill" class="min-w-48">
+  <mat-label>Sort by</mat-label>
+  <mat-select [(value)]="selectedSortBy" (selectionChange)="onSortChange()">
+    @for (option of sortOptions; track option.value) {
+      <mat-option [value]="option.value">{{ option.label }}</mat-option>
+    }
+  </mat-select>
+</mat-form-field>
+        </div>
+      </div>
+
+      @if (selectedCategory || searchControl.value) {
+        <div class="flex items-center gap-2 mt-4">
+          <span class="text-sm text-gray-600">Filters:</span>
+          
+          @if (selectedCategory) {
+            <mat-chip-option selected (removed)="onCategoryChange('')">
+              {{ selectedCategory }}
+              <mat-icon matChipRemove>cancel</mat-icon>
+            </mat-chip-option>
+          }
+          
+          @if (searchControl.value) {
+            <mat-chip-option selected (removed)="searchControl.setValue(''); filterAndSortProducts()">
+              "{{ searchControl.value }}"
+              <mat-icon matChipRemove>cancel</mat-icon>
+            </mat-chip-option>
+          }
+          
+          <button mat-button color="primary" (click)="clearFilters()" class="ml-2">
+            Clear All
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="flex gap-6">
+      
+      <aside class="hidden lg:block w-64 flex-shrink-0">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Categories</h3>
+          
+          <div class="space-y-2">
+            <button 
+              mat-button 
+              (click)="onCategoryChange('')"
+              [class.font-semibold]="!selectedCategory"
+              [class.text-blue-600]="!selectedCategory"
+              class="w-full justify-start text-left">
+              All Categories
+            </button>
+            
+            @for (category of categories; track category) {
+              <button 
+                mat-button 
+                (click)="onCategoryChange(category)"
+                [class.font-semibold]="selectedCategory === category"
+                [class.text-blue-600]="selectedCategory === category"
+                class="w-full justify-start text-left">
+                {{ category }}
+              </button>
+            }
+          </div>
+        </div>
+      </aside>
+
+      <main class="flex-1">
+        @if (loading) {
+          <div class="flex justify-center py-20">
+            <mat-spinner></mat-spinner>
+          </div>
+        } @else if (displayedProducts.length === 0) {
+          <div class="text-center py-20">
+            <mat-icon class="text-6xl text-gray-400 mb-4">search_off</mat-icon>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">No products found</h3>
+            <p class="text-gray-600 mb-6">Try adjusting your search or filter criteria</p>
+            <button mat-raised-button color="primary" (click)="clearFilters()">
+              Clear Filters
+            </button>
+          </div>
+        } @else {
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            @for (product of displayedProducts; track product.id) {
+              <mat-card class="product-card group cursor-pointer hover:shadow-xl transition-all duration-300">
+                <div class="relative overflow-hidden">
+                  <img 
+                    [src]="getProductImageUrl(product)" 
+                    [alt]="product.name"
+                    class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                    (click)="navigateToProduct(product.id)"
+                  >
+                  
+                  <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                    <button 
+                      mat-mini-fab 
+                      color="primary"
+                      (click)="navigateToProduct(product.id)"
+                      class="opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      matTooltip="View Details">
+                      <mat-icon>visibility</mat-icon>
+                    </button>
+                  </div>
+
+                  @if (!product.productAvailable) {
+                    <div class="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
+                      Out of Stock
+                    </div>
+                  }
+                </div>
+                
+                <mat-card-content class="p-4">
+                  <h3 class="font-semibold text-lg text-gray-900 mb-1 line-clamp-2">{{ product.name }}</h3>
+                  <p class="text-sm text-gray-500 mb-1">{{ product.brand }}</p>
+                  <p class="text-xs text-blue-600 mb-3">{{ product.category }}</p>
+                  
+                  <div class="flex items-center justify-between">
+                    <span class="text-xl font-bold text-green-600">${{ product.price }}</span>
+                    <button 
+                      mat-icon-button 
+                      color="primary"
+                      (click)="addToCart(product); $event.stopPropagation()"
+                      matTooltip="Add to Cart"
+                      [disabled]="!product.productAvailable">
+                      <mat-icon>add_shopping_cart</mat-icon>
+                    </button>
+                  </div>
+                  
+                  @if (product.productAvailable) {
+                    <div class="mt-2 text-xs text-green-600">{{ product.stockQuantity }} in stock</div>
+                  }
+                </mat-card-content>
+              </mat-card>
+            }
+          </div>
+
+          @if (totalProducts > pageSize) {
+            <div class="mt-8 flex justify-center">
+              <mat-paginator
+                [length]="totalProducts"
+                [pageSize]="pageSize"
+                [pageSizeOptions]="[12, 24, 48]"
+                [pageIndex]="pageIndex"
+                (page)="onPageChange($event)"
+                showFirstLastButtons>
+              </mat-paginator>
+            </div>
+          }
+        }
+      </main>
+    </div>
+  </div>
+</div>-->

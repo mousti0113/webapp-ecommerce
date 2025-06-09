@@ -1,1 +1,287 @@
-<p>cart works!</p>
+<div class="cart-container min-h-screen bg-gray-50">
+  
+  <!-- Header -->
+  <div class="bg-white border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 py-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Shopping Cart</h1>
+          <p class="text-gray-600 mt-1">
+            @if (getTotalItems() > 0) {
+              {{ getTotalItems() }} items in your cart
+            } @else {
+              Your cart is empty
+            }
+          </p>
+        </div>
+        
+        @if (cartItems.length > 0) {
+          <button 
+            mat-stroked-button 
+            color="warn"
+            (click)="clearCart()"
+            class="hidden sm:block">
+            <mat-icon class="mr-2">delete_sweep</mat-icon>
+            Clear Cart
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    
+    @if (cartItems.length === 0) {
+      <!-- Empty Cart -->
+      <div class="text-center py-20">
+        <mat-icon class="text-8xl text-gray-400 mb-6">shopping_cart</mat-icon>
+        <h2 class="text-2xl font-semibold text-gray-900 mb-4">Your cart is empty</h2>
+        <p class="text-gray-600 mb-8">Looks like you haven't added any items to your cart yet.</p>
+        <button 
+          mat-raised-button 
+          color="primary" 
+          (click)="continueShopping()"
+          class="px-8 py-3">
+          <mat-icon class="mr-2">shopping_bag</mat-icon>
+          Start Shopping
+        </button>
+      </div>
+    } @else {
+      <!-- Cart Content -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Cart Items -->
+        <div class="lg:col-span-2 space-y-4">
+          @for (item of cartItems; track item.product.id) {
+            <mat-card class="cart-item-card">
+              <mat-card-content class="p-6">
+                <div class="flex flex-col sm:flex-row gap-4">
+                  
+                  <!-- Product Image -->
+                  <div class="flex-shrink-0">
+                    <img 
+                      [src]="getProductImageUrl(item)"
+                      [alt]="item.product.name"
+                      class="w-24 h-24 object-cover rounded-lg cursor-pointer hover:opacity-75 transition-opacity"
+                      (click)="navigateToProduct(item.product.id)"
+                   >
+                  </div>
+                  
+                  <!-- Product Info -->
+                  <div class="flex-1 min-w-0">
+                    <div class="flex flex-col sm:flex-row sm:justify-between gap-4">
+                      
+                      <!-- Product Details -->
+                      <div class="flex-1">
+                        <h3 
+                          class="text-lg font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                          (click)="navigateToProduct(item.product.id)">
+                          {{ item.product.name }}
+                        </h3>
+                        <p class="text-sm text-gray-500 mt-1">{{ item.product.brand }}</p>
+                        <p class="text-sm text-blue-600 mt-1">{{ item.product.category }}</p>
+                        <p class="text-xs text-gray-400 mt-2">Added {{ formatDate(item.addedAt) }}</p>
+                        
+                        <!-- Stock Warning -->
+                        @if (getStockWarning(item)) {
+                          <div class="mt-2">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                                  [class]="!isStockAvailable(item) ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'">
+                              <mat-icon class="w-3 h-3 mr-1" [class]="!isStockAvailable(item) ? 'text-red-500' : 'text-yellow-500'">
+                                {{ !isStockAvailable(item) ? 'error' : 'warning' }}
+                              </mat-icon>
+                              {{ getStockWarning(item) }}
+                            </span>
+                          </div>
+                        }
+                      </div>
+                      
+                      <!-- Quantity and Price -->
+                      <div class="flex flex-col items-end gap-3">
+                        
+                        <!-- Price -->
+                        <div class="text-right">
+                          <div class="text-lg font-semibold text-gray-900">
+                            {{ formatPrice(item.product.price * item.quantity) }}
+                          </div>
+                          <div class="text-sm text-gray-500">
+                            {{ formatPrice(item.product.price) }} each
+                          </div>
+                        </div>
+                        
+                        <!-- Quantity Controls -->
+                        <div class="flex items-center gap-2">
+                          <button 
+                            mat-icon-button 
+                            (click)="decreaseQuantity(item)"
+                            [disabled]="item.quantity <= 1"
+                            matTooltip="Decrease quantity">
+                            <mat-icon>remove</mat-icon>
+                          </button>
+                          
+                          <span class="min-w-8 text-center font-medium">{{ item.quantity }}</span>
+                          
+                          <button 
+                            mat-icon-button 
+                            (click)="increaseQuantity(item)"
+                            [disabled]="item.quantity >= item.product.stockQuantity"
+                            matTooltip="Increase quantity">
+                            <mat-icon>add</mat-icon>
+                          </button>
+                        </div>
+                        
+                        <!-- Remove Button -->
+                        <button 
+                          mat-icon-button 
+                          color="warn"
+                          (click)="removeItem(item.product.id)"
+                          matTooltip="Remove from cart">
+                          <mat-icon>delete</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
+        </div>
+
+        <!-- Order Summary -->
+        <div class="lg:col-span-1">
+          <div class="sticky top-4 space-y-6">
+            
+            <!-- Coupon Section -->
+            <mat-card class="coupon-card">
+              <mat-card-header>
+                <mat-card-title class="text-lg">Promo Code</mat-card-title>
+              </mat-card-header>
+              <mat-card-content class="p-6">
+                @if (discountAmount > 0) {
+                  <!-- Applied Coupon -->
+                  <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="flex justify-between items-center">
+                      <div>
+                        <div class="text-sm font-medium text-green-800">Coupon Applied!</div>
+                        <div class="text-xs text-green-600">{{ couponControl.value }}</div>
+                      </div>
+                      <button mat-icon-button (click)="removeCoupon()" matTooltip="Remove coupon">
+                        <mat-icon class="text-green-600">close</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                } @else {
+                  <!-- Coupon Input -->
+                  <div class="space-y-3">
+                    <mat-form-field appearance="fill" class="w-full">
+                      <mat-label>Enter promo code</mat-label>
+                      <input matInput [formControl]="couponControl" placeholder="SAVE10">
+                    </mat-form-field>
+                    <button 
+                      mat-stroked-button 
+                      color="primary" 
+                      class="w-full"
+                      (click)="applyCoupon()"
+                      [disabled]="!couponControl.value?.trim()">
+                      Apply Coupon
+                    </button>
+                    <div class="text-xs text-gray-500">
+                      Try: SAVE10, SAVE20, WELCOME, FREESHIP
+                    </div>
+                  </div>
+                }
+              </mat-card-content>
+            </mat-card>
+
+            <!-- Order Summary -->
+            <mat-card class="summary-card">
+              <mat-card-header>
+                <mat-card-title class="text-lg">Order Summary</mat-card-title>
+              </mat-card-header>
+              <mat-card-content class="p-6">
+                <div class="space-y-3">
+                  
+                  <!-- Subtotal -->
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">Subtotal ({{ getTotalItems() }} items)</span>
+                    <span class="font-medium">{{ formatPrice(getSubtotal()) }}</span>
+                  </div>
+                  
+                  <!-- Discount -->
+                  @if (discountAmount > 0) {
+                    <div class="flex justify-between text-green-600">
+                      <span>
+                        Discount
+                        @if (discountPercentage > 0) {
+                          ({{ discountPercentage }}%)
+                        }
+                      </span>
+                      <span>-{{ formatPrice(discountAmount) }}</span>
+                    </div>
+                  }
+                  
+                  <!-- Shipping -->
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">Shipping</span>
+                    <span [class]="getShipping() === 0 ? 'text-green-600 font-medium' : ''">
+                      {{ getShipping() === 0 ? 'FREE' : formatPrice(getShipping()) }}
+                    </span>
+                  </div>
+                  
+                  @if (getShipping() > 0) {
+                    <div class="text-xs text-gray-500">
+                      Free shipping on orders over $50
+                    </div>
+                  }
+                  
+                  <!-- Tax -->
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">Tax (8.5%)</span>
+                    <span>{{ formatPrice(getTax()) }}</span>
+                  </div>
+                  
+                  <mat-divider></mat-divider>
+                  
+                  <!-- Total -->
+                  <div class="flex justify-between text-lg font-semibold">
+                    <span>Total</span>
+                    <span class="text-green-600">{{ formatPrice(getTotal()) }}</span>
+                  </div>
+                </div>
+                
+                <!-- Checkout Button -->
+                <div class="mt-6 space-y-3">
+                  <button 
+                    mat-raised-button 
+                    color="primary" 
+                    class="w-full text-lg py-3"
+                    (click)="proceedToCheckout()">
+                    <mat-icon class="mr-2">lock</mat-icon>
+                    Proceed to Checkout
+                  </button>
+                  
+                  <button 
+                    mat-stroked-button 
+                    class="w-full"
+                    (click)="continueShopping()">
+                    <mat-icon class="mr-2">shopping_bag</mat-icon>
+                    Continue Shopping
+                  </button>
+                </div>
+                
+                <!-- Security Badge -->
+                <div class="mt-4 text-center">
+                  <div class="inline-flex items-center text-xs text-gray-500">
+                    <mat-icon class="w-4 h-4 mr-1">lock</mat-icon>
+                    Secure checkout powered by SSL
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

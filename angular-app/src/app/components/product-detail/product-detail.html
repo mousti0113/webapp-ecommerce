@@ -1,0 +1,262 @@
+<div class="product-detail-container min-h-screen bg-gray-50">
+
+  @if (loading) {
+    <!-- Loading State -->
+    <div class="flex justify-center items-center min-h-screen">
+      <mat-spinner></mat-spinner>
+    </div>
+  } @else if (error || !product) {
+    <!-- Error State -->
+    <div class="flex flex-col items-center justify-center min-h-screen">
+      <mat-icon class="text-6xl text-gray-400 mb-4">error_outline</mat-icon>
+      <h2 class="text-2xl font-semibold text-gray-900 mb-2">Product Not Found</h2>
+      <p class="text-gray-600 mb-6">The product you're looking for doesn't exist or has been removed.</p>
+      <button mat-raised-button color="primary" (click)="goBack()">
+        <mat-icon class="mr-2">arrow_back</mat-icon>
+        Back to Products
+      </button>
+    </div>
+  } @else {
+    <!-- Product Detail Content -->
+    
+    <!-- Breadcrumb -->
+    <div class="bg-white border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-4 py-4">
+        <nav class="flex items-center gap-2 text-sm">
+          <button mat-button (click)="navigateToHome()" class="text-gray-500 hover:text-blue-600">
+            Home
+          </button>
+          <mat-icon class="text-gray-400">chevron_right</mat-icon>
+          <button mat-button (click)="goBack()" class="text-gray-500 hover:text-blue-600">
+            Products
+          </button>
+          <mat-icon class="text-gray-400">chevron_right</mat-icon>
+          <span class="text-gray-900 font-medium">{{ product.name }}</span>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Main Product Section -->
+    <div class="max-w-7xl mx-auto px-4 py-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- Product Images -->
+        <div class="space-y-4">
+          <!-- Main Image -->
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <img 
+              [src]="getProductImageUrl()"
+              [alt]="product.name"
+              class="w-full h-96 object-cover"
+              >
+          </div>
+          
+          <!-- Thumbnail Images (placeholder for future multiple images) -->
+          <div class="grid grid-cols-4 gap-2">
+            @for (i of [1,2,3,4]; track i) {
+              <div class="bg-white rounded-lg border border-gray-200 overflow-hidden cursor-pointer opacity-50">
+                <img 
+                  [src]="getProductImageUrl()"
+                  class="w-full h-20 object-cover">
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Product Info -->
+        <div class="space-y-6">
+          
+          <!-- Basic Info -->
+          <div>
+            <mat-chip-option class="mb-3">{{ product.category }}</mat-chip-option>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ product.name }}</h1>
+            <p class="text-lg text-gray-600 mb-2">by {{ product.brand }}</p>
+            <div class="flex items-center gap-2 mb-4">
+              <span class="text-3xl font-bold text-green-600">${{ product.price }}</span>
+              <span [class]="getStockStatusClass()" class="font-medium">
+                {{ getStockStatus() }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Description</h3>
+            <p class="text-gray-700 leading-relaxed">{{ product.description }}</p>
+          </div>
+
+          <!-- Product Details -->
+          <div class="bg-gray-50 rounded-lg p-4">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">Product Details</h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <span class="text-sm text-gray-600">Brand:</span>
+                <p class="font-medium">{{ product.brand }}</p>
+              </div>
+              <div>
+                <span class="text-sm text-gray-600">Category:</span>
+                <p class="font-medium">{{ product.category }}</p>
+              </div>
+              <div>
+                <span class="text-sm text-gray-600">Release Date:</span>
+                <p class="font-medium">{{ formatDate(product.releaseDate) }}</p>
+              </div>
+              <div>
+                <span class="text-sm text-gray-600">Stock:</span>
+                <p class="font-medium">{{ product.stockQuantity }} units</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quantity Selector -->
+          @if (isInStock()) {
+            <div class="space-y-4">
+              <div>
+                <label class="text-sm font-medium text-gray-900 mb-2 block">Quantity:</label>
+                <div class="flex items-center gap-3">
+                  <button 
+                    mat-icon-button 
+                    (click)="decreaseQuantity()"
+                    [disabled]="(quantity.value || 1) <= 1"
+                    class="border border-gray-300">
+                    <mat-icon>remove</mat-icon>
+                  </button>
+                  <input 
+                    [formControl]="quantity"
+                    type="number"
+                    [min]="1"
+                    [max]="product.stockQuantity"
+                    class="w-20 text-center border border-gray-300 rounded-md py-2">
+                  <button 
+                    mat-icon-button 
+                    (click)="increaseQuantity()"
+                    [disabled]="(quantity.value || 1) >= product.stockQuantity"
+                    class="border border-gray-300">
+                    <mat-icon>add</mat-icon>
+                  </button>
+                  <span class="text-sm text-gray-600">{{ product.stockQuantity }} available</span>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="space-y-3">
+                <button 
+                  mat-raised-button 
+                  color="primary" 
+                  class="w-full text-lg py-3"
+                  (click)="addToCart()">
+                  <mat-icon class="mr-2">add_shopping_cart</mat-icon>
+                  Add to Cart
+                </button>
+                
+                <button 
+                  mat-stroked-button 
+                  color="primary" 
+                  class="w-full text-lg py-3"
+                  (click)="buyNow()">
+                  <mat-icon class="mr-2">flash_on</mat-icon>
+                  Buy Now
+                </button>
+              </div>
+            </div>
+          } @else {
+            <!-- Out of Stock -->
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div class="flex items-center gap-2">
+                <mat-icon class="text-red-600">info</mat-icon>
+                <span class="text-red-800 font-medium">This product is currently out of stock</span>
+              </div>
+              <p class="text-red-700 text-sm mt-1">Please check back later or contact us for availability.</p>
+            </div>
+          }
+
+          <!-- Additional Actions -->
+          <div class="flex gap-4 pt-4">
+            <button mat-stroked-button (click)="shareProduct()" class="flex-1">
+              <mat-icon class="mr-2">share</mat-icon>
+              Share
+            </button>
+            <button mat-stroked-button class="flex-1">
+              <mat-icon class="mr-2">favorite_border</mat-icon>
+              Wishlist
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Additional Information Tabs -->
+    <div class="max-w-7xl mx-auto px-4 py-8">
+      <mat-tab-group class="product-tabs">
+        <mat-tab label="Description">
+          <div class="py-6">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">Product Description</h3>
+            <p class="text-gray-700 leading-relaxed">{{ product.description }}</p>
+          </div>
+        </mat-tab>
+        <mat-tab label="Specifications">
+          <div class="py-6">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">Specifications</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <strong>Brand:</strong> {{ product.brand }}
+              </div>
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <strong>Category:</strong> {{ product.category }}
+              </div>
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <strong>Release Date:</strong> {{ formatDate(product.releaseDate) }}
+              </div>
+              <div class="bg-gray-50 p-4 rounded-lg">
+                <strong>Availability:</strong> {{ isInStock() ? 'In Stock' : 'Out of Stock' }}
+              </div>
+            </div>
+          </div>
+        </mat-tab>
+        <mat-tab label="Reviews">
+          <div class="py-6">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">Customer Reviews</h3>
+            <p class="text-gray-600">Reviews feature coming soon...</p>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+
+    <!-- Related Products -->
+    @if (relatedProducts.length > 0) {
+      <div class="max-w-7xl mx-auto px-4 py-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Related Products</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          @for (relatedProduct of relatedProducts; track relatedProduct.id) {
+            <mat-card class="product-card group cursor-pointer hover:shadow-xl transition-all duration-300"
+                      (click)="navigateToProduct(relatedProduct.id)">
+              <div class="relative overflow-hidden">
+                <img 
+                  [src]="getProductImageUrl(relatedProduct)" 
+                  [alt]="relatedProduct.name"
+                  class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                 
+                  >
+              </div>
+              
+              <mat-card-content class="p-4">
+                <h3 class="font-semibold text-lg text-gray-900 mb-1 line-clamp-2">{{ relatedProduct.name }}</h3>
+                <p class="text-sm text-gray-500 mb-2">{{ relatedProduct.brand }}</p>
+                <div class="flex items-center justify-between">
+                  <span class="text-xl font-bold text-green-600">${{ relatedProduct.price }}</span>
+                  <button 
+                    mat-icon-button 
+                    color="primary"
+                    (click)="$event.stopPropagation()"
+                    matTooltip="Add to Cart">
+                    <mat-icon>add_shopping_cart</mat-icon>
+                  </button>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>
